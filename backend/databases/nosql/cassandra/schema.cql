@@ -52,3 +52,18 @@ select * from movies_by_actor where actor = 'Emma Stone' and release_year > 2015
 CREATE CUSTOM INDEX title ON movies_by_actor (title) 
 USING 'org.apache.cassandra.index.sasi.SASIIndex'
 WITH OPTIONS = {'mode' : 'contains'};
+
+# Create a materialized view
+CREATE MATERIALIZED VIEW movies_mv AS
+SELECT title, release_year, movie_id, genres, actor
+FROM movies_by_actor
+WHERE title IS NOT NULL 
+AND release_year IS NOT NULL
+AND movie_id IS NOT NULL
+AND actor IS NOT NULL
+PRIMARY KEY ((title, release_year), actor, movie_id);
+
+# Query materialized view 
+select * from movies_mv 
+where title = 'Birdman' 
+and release_year = 2011;

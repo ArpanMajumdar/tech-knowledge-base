@@ -29,7 +29,7 @@ CREATE TABLE movies_by_actor (
 - Here, `actor` is the partitioning key and `release_year` , `movie_id` are clustering keys. Cassandra makes sure to keep records with the same partitioning key in the same node locally.
 - Ordering the keys allows us to perform range queries.
 
-## Cassanra data types
+## Cassandra data types
 - text, int, bigint, float, double, boolean
 - decimal, varint
 - uuid, timeuuid(if we want unique IDs but also like to order by time)
@@ -67,3 +67,67 @@ and title like '%man';
 - We are used to modeling domains.
 - Now we model queries as well.
 - This is dictated by key design and index behaviour.
+
+## Materialized views
+
+- If we want to add a new column, due to de-normalization we have to make changes to multiple tables as cassandra doesn't support joins.
+- It is always difficult to migrate from one schema version to other. Materialized views are of help here.
+- This helps to have a relatively wide main table to which we can keep on adding columns and write and then create materialized views on the top of it for read.
+- The main advantages of materialized views is that these queries are performant unlike secondary tables.
+- One key limitation of materiaized views is that every row in main table has one-to-one correspondense with materialized view i.e. we cannot create aggregations in the materialized view.
+
+A materialized view can be created like this.
+``` sql
+CREATE MATERIALIZED VIEW movies_mv AS
+SELECT title, release_year, movie_id, genres, actor
+FROM movies_by_actor
+WHERE title IS NOT NULL 
+AND release_year IS NOT NULL
+AND movie_id IS NOT NULL
+AND actor IS NOT NULL
+PRIMARY KEY ((title, release_year), actor, movie_id);
+```
+You can query the materialized view like a normal table using its primary key.
+``` sql
+select * from movies_mv 
+where title = 'Birdman' 
+and release_year = 2011;
+```
+
+## Nodes and clusters
+
+- Cassandra hashes the partition key and uses ring token structure to assign to which node the record goes.
+- We can elastically grow or shrink the cassandra cluster without taking it down for maintenance.
+
+## Replication
+- Only keeping one copy of data(especially in production) is unacceptable as hardware or network failure can happen.
+- Replication factor
+- Replica placement (If replication factor is N, then records are also written to the next N-1 node along with the node determined by token hashing)
+
+## Consistency
+- Since there are multiple replicas of the data, updating the data can lead to consistency problems.
+- How many replicas are enough when we are:
+  1. Writing
+  2. Reading
+- Tunable consistency levels
+- How do we know that a write succeeded?
+  - There are different consistency levels from which we can choose according to our use case.
+    1. **CL = ALL** (Write is considered successful only after data is written to all the replicas, useful if we want very high consistency)
+    2. **CL = QUORUM** (Write is considered successful after data is written to the number of replicas specified in the quorum < N>)
+    3. **CL = ONE** (Write is considered successful after data is written to one node, useful if we want very low latency)
+- When an application writes a record, it randomly picks a node and it acts as a coordinator for that context.
+- Coordinator role is not specific to a node and any node can act as coordinator.
+- Coordinator decides which nodes in the replica are supposed to perform read or write.
+- Coordinator also keeps track of latency of nodes and chooses the node with the lowest latency for read and write operations.
+- For reads and writes to be consistent, we have to follow this formula - `R + W > N`. 
+- If we choose CL < ALL, we may have stale data. Cassandra gives a **repair operation** which syncs data across replicas for a table or a node. This is an administrative operation and must be performed atleast once a week.
+
+## Multiple data centers
+- It is required to have multiple data centers to keep data availale.
+
+## Virtual nodes
+- If there are less number of nodes, the token range is divided between them and the sectors are very big.
+- So, if a node goes down or a new node is coming up, all the data is streamed from one node.
+- To cope up with this problem, the token range is divided into a large number of sectors via virtual nodes.
+- At any given time, all the virtual nodes are distributed equally and uniformly among all actual nodes.
+- Now if a new node comes up or a node goes down, these virtual nodes are distributed uniformly again 
