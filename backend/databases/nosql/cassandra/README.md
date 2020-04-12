@@ -130,4 +130,31 @@ and release_year = 2011;
 - So, if a node goes down or a new node is coming up, all the data is streamed from one node.
 - To cope up with this problem, the token range is divided into a large number of sectors via virtual nodes.
 - At any given time, all the virtual nodes are distributed equally and uniformly among all actual nodes.
-- Now if a new node comes up or a node goes down, these virtual nodes are distributed uniformly again 
+- Now if a new node comes up or a node goes down, these virtual nodes are distributed uniformly again.
+
+## Gossip
+- As the number of nodes grow, it becomes difficult to perform health checks and know the state of all the nodes.
+- **Gossip** is an epidemic protocol where it randomly selects some other nodes to talk to. It then exhanges information about their state and about the state of the nodes they know. (That's why it's called a gossip protocol)
+- In this way, everybody in the cluster knows about everybody.
+- Every node can raise a suspicion about other nodes if something is abnormal like their disk or memory utilization is high.
+- Thus when we connect to any 1 node of the cluster, it can give a good picture of the entire cluster at any point of time.
+
+## Write path
+- Writes in cassandra are implemented using **Log-structured merge tree**.
+- Writes are like log i.e writes are performed using an append only fashion and they are immutable. You cannot go back and update a log. You can only append to a log.
+- Whenever a write comes to cassandra, it writes it into a commit log.
+- There is 1 commit log per node.
+- These logs are then buffered to an in-memory data structure called **memtable**.
+- There is one memtable per table.
+- This memtable is then flushed sequentially to immutable **SSTables** (Sorted String tables). 
+- Due to this sequential flushing, cassandra provides great write speeds. In general, write speed is almost double that of read speed.
+- For deleting a record, cassandra places a tombstone in the mem-table.
+
+## Read path
+- Read path is a process of assembling the rows and columns we need.
+- While reading query first looks at the mem-table. If all rows that are required are there in the mem-table its wel and good because by definition mem-tables have the most recent data and its going to be really fast as we are not touching the disk.
+- Generally this is not the case and we may need to scan the SSTables to get the data we need.
+- Every SSTable has something called a **Bloom Filter**. It is a way of telling us if we should look at that table for reading.
+- Bloom filter gives a probability whether a key is present in the SSTable or not.
+- There is also a **Key Cache** in each SSTable which stores the offsets of all the keys. If there is a cache miss, then the key is populated after scanning all the indexes of the SSTable.
+- 
