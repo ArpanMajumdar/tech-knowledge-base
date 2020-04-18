@@ -157,4 +157,13 @@ and release_year = 2011;
 - Every SSTable has something called a **Bloom Filter**. It is a way of telling us if we should look at that table for reading.
 - Bloom filter gives a probability whether a key is present in the SSTable or not.
 - There is also a **Key Cache** in each SSTable which stores the offsets of all the keys. If there is a cache miss, then the key is populated after scanning all the indexes of the SSTable.
-- 
+
+# Compaction
+
+- We keep writing data to memtables and they are periodically flushed to SSTables.
+- But we caannot keep writing forever to SSTables.
+- While compaction the deleted data which is marked using tombstones is discarded.
+- Since compaction is a background process it doesn't affect reads and old SSTables are used for scanning. As soon as compaction is done, it flips the swtch and the reads are now handled by the compated SSTable.
+- Compaction strategies
+  1. Size-based (SSTables with least size are compacted)
+  2. Time-based
