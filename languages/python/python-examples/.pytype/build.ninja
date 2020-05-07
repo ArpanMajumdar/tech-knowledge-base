@@ -1,9 +1,0 @@
-rule infer
-  command = /usr/bin/python3 -m pytype.single --imports_info $imports --module-name $module -V 3.8 -o $out --no-report-errors --nofail --quick $in
-  description = infer $module
-rule check
-  command = /usr/bin/python3 -m pytype.single --imports_info $imports --module-name $module -V 3.8 -o $out --analyze-annotated --nofail --quick $in
-  description = check $module
-build /media/arpan/DATA1/PROGRAMS/github.com/ArpanMajumdar/tech-knowledge-base/languages/python/oop/python-oop-examples/.pytype/pyi/src/point.pyi: check /media/arpan/DATA1/PROGRAMS/github.com/ArpanMajumdar/tech-knowledge-base/languages/python/oop/python-oop-examples/src/point.py
-  imports = /media/arpan/DATA1/PROGRAMS/github.com/ArpanMajumdar/tech-knowledge-base/languages/python/oop/python-oop-examples/.pytype/imports/src.point.imports
-  module = src.point
