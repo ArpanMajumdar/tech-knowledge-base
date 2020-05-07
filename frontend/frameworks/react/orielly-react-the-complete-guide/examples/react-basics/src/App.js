@@ -1,6 +1,22 @@
 import React, { Component } from 'react';
 import './App.css';
-import Person from './components/Person/Person'
+import Person from './components/Person/Person';
+import styled from 'styled-components';
+import styles from './Button.module.css'
+
+const StyledButton = styled.button`
+  background-color: ${props => props.switchColor ? 'red' : 'green'};
+  color: white;
+  font: inherit;
+  border: 1px solid blue;
+  padding: 8px;
+  cursor: pointer;
+  
+  &:hover {
+    background-color: ${props => props.switchColor ? 'salmon' : 'lightgreen'};
+    color: black;
+  }
+`
 
 class App extends Component {
 
@@ -80,15 +96,10 @@ class App extends Component {
 
   render() {
     // Inline styling using JS
-    const buttonStyle = {
-      backgroundColor: "white",
-      font: "inherit",
-      border: '1px solid blue',
-      padding: '8px',
-      cursor: 'pointer'
-    };
+
 
     let persons = null;
+    const buttonClasses = [styles.button];
     if (this.state.showPersons) {
       persons = (
         <div>
@@ -104,15 +115,27 @@ class App extends Component {
           )}
         </div>
       );
+
+      buttonClasses.push(styles.Red);
+    }
+
+    const numPersons = this.state.persons.length;
+    const paragraphClasses = [];
+    if (numPersons <= 2) {
+      paragraphClasses.push("red");
+    }
+    if (numPersons <= 1) {
+      paragraphClasses.push("bold");
     }
 
     return (
       <div className="App">
         <h1>Hi, this is a React App</h1>
-        <p>This is really cool !</p>
-        <button
-          style={buttonStyle}
-          onClick={this.togglePersonsHandler}>
+        <p className={paragraphClasses.join(' ')}>This is really cool !</p>
+        <button className={buttonClasses.join(' ')}
+          onClick={this.togglePersonsHandler}
+        // switchColor={this.state.showPersons}
+        >
           Toggle persons
         </button>
         {persons}
