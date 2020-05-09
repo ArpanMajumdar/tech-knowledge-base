@@ -30,3 +30,5 @@ yarn-error.log*
 
 # Python
 .pytype
+__pycache__
+venv
