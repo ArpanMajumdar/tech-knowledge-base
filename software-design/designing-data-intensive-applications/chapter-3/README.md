@@ -162,3 +162,57 @@ Comparison of transaction vs analytics systems
 - Other columns in the fact table are foreign key references to other tables, called dimension tables.  As each row in the fact table represents an event, the dimensions represent the **who, what, where, when, how, and why** of the event.
 - The name **star schema** comes from the fact that when the table relationships are visualized, the fact table is in the middle, surrounded by its dimension tables; the connections to these tables are like the rays of a star.
 - A variation of this template is known as the **snowflake schema**, where dimensions are further broken down into sub-dimensions.
+
+## Column oriented storage
+
+- Although fact tables are often over 100 columns wide, a typical data warehouse query only accesses 4 or 5 of them at one time ("SELECT *" queries are rarely needed for analytics).
+- In most OLTP databases, storage is laid out in a row-oriented fashion: all the values from one row of a table are stored next to each other. Document databases are similar: an entire document is typically stored as one contiguous sequence of bytes.
+- The idea behind column-oriented storage is simple: **don’t store all the values from one row together, but store all the values from each column together** instead. If each column is stored in a separate file, a query only needs to read and parse those columns that are used in that query, which can save a lot of work.
+- The column-oriented storage layout relies on each column file containing the rows in the same order.
+
+### Column compression
+
+- Besides only loading those columns from disk that are required for a query, we can further reduce the demands on disk throughput by compressing data. Fortunately, column-oriented storage often lends itself very well to compression.
+- One technique that is particularly effective in data warehouses is bitmap encoding(for categorical data).
+- If n is very small (for example, a country column may have approximately 200 distinct values), those bitmaps can be stored with **one bit per row**. But if n is bigger, there will be a lot of zeros in most of the bitmaps (we say that they are sparse). In that case, the bitmaps can additionally be **run-length encoded**.
+- Bitmap indexes such as these are very well suited for the kinds of queries that are common in a data warehouse. For example:
+  - **WHERE product_sk IN (30, 68, 69):** Load the three bitmaps for product_sk = 30, product_sk = 68, and product_sk = 69, and calculate the bitwise OR of the three bitmaps, which can be done very efficiently.
+  - **WHERE product_sk = 31 AND store_sk = 3:** Load the bitmaps for product_sk = 31 and store_sk = 3, and calculate the bitwise AND. 
+
+### Vectorized processing
+
+- Developers of analytical databases also worry about efficiently using the bandwidth from main memory into the CPU cache by making use of **single-instruction-multi-data (SIMD)** instructions in modern CPUs.
+- Column compression allows more rows from a column to fit in the same amount of L1 cache. 
+- Operators, such as the bitwise AND and OR described previously, can be designed to operate on such chunks of compressed column data directly. This technique is known as **vectorized processing**.
+
+### Sort order in column storage
+
+- It’s easiest to store columns in the order in which they were inserted, since then inserting a new row just means appending to each of the column files. However, we can choose to impose an order, like we did with **SSTables** previously, and use that as an indexing mechanism.
+- Note that it wouldn’t make sense to sort each column independently, because then we would no longer know which items in the columns belong to the same row. We can only reconstruct a row because we know that the kth item in one column belongs to the same row as the kth item in another column.
+- the data needs to be sorted an entire row at a time, even though it is stored by column. The administrator of the database can **choose the columns by which the table should be sorted, using their knowledge of common queries**. For example, if queries often target date ranges, such as the last month, it might make sense to make **date_key** the first sort key.
+- Another advantage of sorted order is that it can help with compression of columns.
+
+### Writing to column oriented storage
+
+- Column-oriented storage, compression, and sorting all help to make those read queries faster. However, they have the downside of making writes more difficult.
+- An update-in-place approach, like B-trees use, is not possible with compressed columns. 
+- We can use a good solution like LSM-trees. All writes first go to an in-memory store, where they are added to a sorted structure and prepared for writing to disk. It doesn’t matter whether the in-memory store is row-oriented or column-oriented. When enough writes have accumulated, they are merged with the column files on disk and written to new files in bulk.
+
+### Aggregation and materialized views
+
+- Data warehouse queries often involve an aggregate function, such as **COUNT, SUM, AVG, MIN, or MAX** in SQL. If the same aggregates are used by many different queries, it can be wasteful to crunch through the raw data every time. Why not cache some of the counts or sums that queries use most often? One way of creating such a cache is a **materialized view**.
+- Materialized view is an actual copy of the query results, written to disk, whereas a virtual view(used in relational tables) is just a shortcut for writing queries.
+- When the underlying data changes, a materialized view needs to be updated, because it is a de-normalized copy of the data. The database can do that automatically, but such updates make writes more expensive.
+
+## Summary
+
+On a high level, storage engines fall into two broad categories: those **optimized for transaction processing (OLTP)**, and those **optimized for analytics (OLAP)**. There are big differences between the access patterns in those use cases:
+
+1. **OLTP systems**
+   - OLTP systems are typically **user-facing**, which means that they may see a huge volume of requests.
+   - In order to handle the load, applications usually only **touch a small number of records** in each query.
+   - The application requests records using some kind of key, and the storage engine uses an index to find the data for the requested key. **Disk seek** time is often the bottleneck here.
+2. **OLAP systems**
+   - Data warehouses and similar analytic systems are less well known, because they are primarily used by **business analysts**, not by end users.
+   - They handle a much lower volume of queries than OLTP systems, but **each query is typically very demanding**, requiring many millions of records to be scanned in a short time. 
+   - **Disk bandwidth** (not seek time) is often the bottleneck here, and column-oriented storage is an increasingly popular solution for this kind of workload.
