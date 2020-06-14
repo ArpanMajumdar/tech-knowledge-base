@@ -158,3 +158,68 @@ There can be number of ways data can flow between processes -
 
 ### Dataflow through databases
 
+1. **Backward compatibility** - There may just be a single process accessing the database, in which case the reader is simply a later version of the same process—in that case you can think of storing something in the database as sending a message to your future self. Backward compatibility is clearly necessary here; otherwise your future self won’t be able to decode what you previously wrote.
+2. **Forward compatibility** -  It’s common for several different processes to be accessing a database at the same time. Those processes might be several different applications or services, or they may simply be several instances of the same service. Either way, in an environment where the application is changing, it is likely that some processes accessing the database will be running newer code and some will be running older code—for example because a new version is currently being deployed in a rolling upgrade, so some instances have been updated while others haven’t yet. This means that a value in the database may be written by a newer version of the code, and subsequently read by an older version of the code that is still running. Thus, forward compatibility is also often required for databases.
+
+- If a newer code writes a new value and read by the older code, updates and writes it back often new field is lost in the translation process. Desirable behavior is usually for the old code to keep the new field intact, even though it couldn’t be interpreted.
+- The encoding formats discussed previously support such preservation of unknown fields, but sometimes you need to take care at an application level.
+- When you deploy a new version of your application (of a server-side application, at least), you may entirely replace the old version with the new version within a few minutes. The same is not true of database contents: the five-year-old data will still be there, in the original encoding, unless you have explicitly rewritten it since then.
+- Rewriting (migrating) data into a new schema is certainly possible, but it’s an expensive thing to do on a large dataset, so most databases avoid it if possible. 
+- Schema evolution thus allows the entire database to appear as if it was encoded with a single schema, even though the underlying storage may contain records encoded with various historical versions of the schema.
+- Perhaps you take a snapshot of your database from time to time, say for backup purposes or for loading into a data warehouse.
+- As the data dump is written in one go and is thereafter immutable, formats like Avro object container files are a good fit. This is also a good opportunity to encode the data in an analytics-friendly column-oriented format such as **Parquet**.
+
+### Dataflow through services: REST and RPC
+
+- When you have processes that need to communicate over a network, there are a few different ways of arranging that communication. The most common arrangement is to have two roles: **clients** and **servers**. The servers expose an API over the network, and the clients can connect to the servers to make requests to that **API**. The API exposed by the server is known as a **service**.
+- The server’s response is typically not HTML for displaying to a human, but rather data in an encoding that is convenient for further processing by the client-side application code (such as JSON). Although HTTP may be used as the transport protocol, the API implemented on top is application-specific, and the client and server need to agree on the details of that API.
+- Some examples of clients are
+  - **Web browsers** - Make **GET** requests to download HTML, CSS, JavaScript, images, etc., and making **POST** requests to submit data to the server.
+  - Native app running on a mobile device or desktop
+  - A server can itself be a client to another service or database
+- Services are similar to databases: they typically allow clients to submit and query data. However, while databases allow arbitrary queries using the query languages, services expose an application-specific API that only allows inputs and outputs that are predetermined by the business logic. This restriction provides a degree of encapsulation: services can impose fine-grained restrictions on what clients can and cannot do.
+- A key design goal of a service-oriented/microservices architecture is to make the application easier to change and maintain by making services independently deployable and evolvable.
+
+#### Web services
+
+- There are two popular approaches to web services: **REST** and **SOAP**. They are almost diametrically opposed in terms of philosophy
+
+**REST**
+- REST is not a protocol, but rather a design philosophy that builds upon the principles of HTTP. 
+- It emphasizes simple data formats, using URLs for identifying resources and using HTTP features for cache control, authentication, and content type negotiation. 
+- REST has been gaining popularity compared to SOAP, at least in the context of cross-organizational service integration, and is often associated with microservices. 
+- An API designed according to the principles of REST is called **RESTful**.
+- A definition format such as **OpenAPI**, also known as Swagger, can be used to describe RESTful APIs and produce documentation.
+
+**SOAP**
+- SOAP is an **XML-based protocol** for making network API requests.
+- Although it is most commonly used over HTTP, it aims to be independent from HTTP and avoids using most HTTP features. Instead, it comes with a sprawling and complex multitude of related standards(the web service framework, known as WS-*) that add various features.
+- The API of a SOAP web service is described using an XML-based language called the **Web Services Description Language, or WSDL**. 
+- WSDL enables code generation so that a client can access a remote service using local classes and method calls.
+- As WSDL is not designed to be human-readable, and as SOAP messages are often too complex to construct manually, users of SOAP rely heavily on tool support, code generation, and IDEs.
+- Although SOAP is still used in many large enterprises, it has fallen out of favor in most smaller companies.
+
+#### Remote Procedure Calls (RPCs)
+
+- The RPC model tries to make a request to a remote network service look the same as **calling a function or method in your programming language**, within the same process (this abstraction is called location transparency).
+- Although RPC seems convenient at first, the approach is fundamentally flawed. A network request is very different from a local function call:
+  - A local function call is predictable and either succeeds or fails, depending only on parameters that are under your control. A network request is unpredictable: the request or response may be lost due to a network problem, or the remote machine may be slow or unavailable, and such problems are entirely outside of your control.
+  - A local function call either returns a result, or throws an exception, or never returns (because it goes into an infinite loop or the process crashes). A network request has another possible outcome: it may return without a result, due to a timeout.
+  - Every time you call a local function, it normally takes about the same time to execute. A network request is much slower than a function call, and its latency is also wildly variable.
+  - When you call a local function, you can efficiently pass it references (pointers) to objects in local memory. When you make a network request, all those parameters need to be encoded into a sequence of bytes that can be sent over the network. That’s okay if the parameters are primitives like numbers or strings, but quickly becomes problematic with larger objects.
+  - The client and the service may be implemented in different programming languages, so the RPC framework must translate datatypes from one language into another.
+-  New generation of RPC frameworks is more explicit about the fact that a remote request is different from a local function call.
+-  **gRPC** supports streams, where a call consists of not just one request and one response, but a series of requests and responses over time.
+- Some of these frameworks also provide **service discovery**—that is, allowing a client to find out at which IP address and port number it can find a particular service.
+- Custom RPC protocols with a binary encoding format can achieve better performance than something generic like JSON over REST. However, a RESTful API has other significant advantages: it is good for experimentation and debugging and it is supported by all mainstream programming languages and platforms.
+
+### Message-passing dataflow
+
+- Asynchronous message-passing systems are somewhere between RPC and databases. They are similar to RPC in that a client’s request (usually called a message) is delivered to another process with low latency. They are similar to databases in that the message is not sent via a direct network connection, but goes via an intermediary called a **message broker** (also called a message queue or message-oriented middleware), which stores the message temporarily.
+- Using a message broker has several advantages compared to direct RPC:
+  - It can act as a buffer if the recipient is unavailable or overloaded, and thus improve system reliability.
+  - It can automatically redeliver messages to a process that has crashed, and thus prevent messages from being lost.
+  - It avoids the sender needing to know the IP address and port number of the recipient (which is particularly useful in a cloud deployment where virtual machines often come and go).
+  - It allows one message to be sent to several recipients.
+  - It logically decouples the sender from the recipient (the sender just publishes messages and doesn’t care who consumes them).
+- 
