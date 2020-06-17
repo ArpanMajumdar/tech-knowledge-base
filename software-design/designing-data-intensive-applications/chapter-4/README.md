@@ -222,4 +222,42 @@ There can be number of ways data can flow between processes -
   - It avoids the sender needing to know the IP address and port number of the recipient (which is particularly useful in a cloud deployment where virtual machines often come and go).
   - It allows one message to be sent to several recipients.
   - It logically decouples the sender from the recipient (the sender just publishes messages and doesn’t care who consumes them).
-- 
+- This communication pattern is asynchronous: the sender doesn’t wait for the message to be delivered, but simply sends it and then forgets about it.
+
+#### Message brokers
+
+- In general, **message brokers** are used as follows: one process sends a message to a named queue or topic, and the broker ensures that the message is delivered to one or more consumers of or subscribers to that queue or topic. 
+- There can be many producers and many consumers on the same topic.
+- A topic provides only one-way dataflow. However, a consumer may itself publish messages to another topic.
+- Message brokers typically don’t enforce any particular data model—**a message is just a sequence of bytes with some metadata**, so you can use any encoding format. If the encoding is backward and forward compatible, you have the greatest flexibility to change publishers and consumers independently and deploy them in any order.
+
+#### Distributed actor frameworks
+
+- The actor model is a programming model for concurrency in a single process. 
+- Rather than dealing directly with threads (and the associated problems of race conditions, locking, and deadlock), logic is encapsulated in **actors**. 
+- Each actor typically represents one client or entity, it may have some local state (which is not shared with any other actor), and it communicates with other actors by sending and receiving asynchronous messages. Message delivery is not guaranteed. In certain error scenarios, messages will be lost. 
+- Since each actor processes only one message at a time, it doesn’t need to worry about threads, and each actor can be scheduled independently by the framework.
+- In **distributed actor frameworks**, this programming model is used to scale an application across multiple nodes. 
+- The same message-passing mechanism is used, no matter whether the sender and recipient are on the same node or different nodes. 
+- If they are on different nodes, the message is transparently encoded into a byte sequence, sent over the network, and decoded on the other side.
+- A distributed actor framework essentially integrates a message broker and the actor programming model into a single framework.
+- Some popular distributed actor frameworks handle message encoding as follows:
+  - Akka
+  - Orleans
+  - Erlang OTP
+
+## Summary
+
+- Many services need to support rolling upgrades, where a new version of a service is gradually deployed to a few nodes at a time, rather than deploying to all nodes simultaneously. Rolling upgrades allow new versions of a service to be released without downtime (thus encouraging frequent small releases over rare big releases) and make deployments less risky (allowing faulty releases to be detected and rolled back before they affect a large number of users). These properties are hugely beneficial for evolvability, the ease of making changes to an application.
+- It is important that all data flowing around the system is encoded in a way that provides backward compatibility (new code can read old data) and forward compatibility (old code can read new data).
+- There are several data encoding formats and their compatibility properties:
+  - **Programming language–specific encodings** are restricted to a single programming language and often fail to provide forward and backward compatibility.
+  - Textual formats like **JSON, XML, and CSV** are widespread, and their compatibility depends on how you use them. 
+  - Binary schema–driven formats like **Thrift, Protocol Buffers, and Avro** allow compact, efficient encoding with clearly defined forward and backward compatibility semantics. The schemas can be useful for documentation and code generation in statically typed languages.
+- There are several modes of dataflow:
+  - **Databases**, where the process writing to the database encodes the data and the process reading from the database decodes it.
+  - **RPC** and **REST APIs**, where the client encodes a request, the server decodes the request and encodes a response, and the client finally decodes the response.
+  - **Asynchronous message passing (using message brokers or actors)**, where nodes communicate by sending each other messages that are encoded by the sender and decoded by the recipient.
+
+
+
