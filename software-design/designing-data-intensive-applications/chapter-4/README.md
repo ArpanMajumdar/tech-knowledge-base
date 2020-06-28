@@ -257,7 +257,7 @@ There can be number of ways data can flow between processes -
 - There are several modes of dataflow:
   - **Databases**, where the process writing to the database encodes the data and the process reading from the database decodes it.
   - **RPC** and **REST APIs**, where the client encodes a request, the server decodes the request and encodes a response, and the client finally decodes the response.
-  - **Asynchronous message passing (using message brokers or actors)**, where nodes communicate by sending each other messages that are encoded by the sender and decoded by the recipient.
+  - **Asynchronous message passing (using message brokers or actors)**, where nodes communicate by sending each other messages that are encoded by the sender and decoded by the recipient. 
 
 
 
