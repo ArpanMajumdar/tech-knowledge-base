@@ -16,14 +16,15 @@ public class Main {
         Thread t2 = new Thread(new HelloRunnable());
 
         // By passing a lambda function to thread class
-        Thread t3 = new Thread(() -> {
+        Runnable task = () -> {
             try {
                 TimeUnit.SECONDS.sleep(1);
             } catch (InterruptedException e) {
                 logger.error("Thread interrupted: {}", e);
             }
             logger.info("Hello world from lambda");
-        });
+        };
+        Thread t3 = new Thread(task);
 
         logger.info("Starting threads ...");
         t1.start();
