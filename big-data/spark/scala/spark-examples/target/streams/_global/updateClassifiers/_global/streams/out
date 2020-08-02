@@ -1,0 +1,4 @@
+[debug] "not up to date. inChanged = true, force = false
+[debug] Updating ProjectRef(uri("file:/media/arpan/DATA2/PROGRAMS/github.com/ArpanMajumdar/tech-knowledge-base/big-data/spark/scala/spark-examples/"), "spark-examples")...
+[debug] Done updating ProjectRef(uri("file:/media/arpan/DATA2/PROGRAMS/github.com/ArpanMajumdar/tech-knowledge-base/big-data/spark/scala/spark-examples/"), "spark-examples")
+[warn] There may be incompatibilities among your library dependencies; run 'evicted' to see detailed eviction warnings.
