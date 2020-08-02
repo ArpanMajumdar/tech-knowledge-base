@@ -32,3 +32,6 @@ yarn-error.log*
 .pytype
 __pycache__
 venv
+
+# Scala
+target
