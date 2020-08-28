@@ -1,0 +1,3 @@
+2020.08.28 12:52:22 INFO  started: Metals version 0.9.3 in workspace '/media/arpan/DATA2/PROGRAMS/github.com/ArpanMajumdar/tech-knowledge-base' for client vscode.
+2020.08.28 12:52:23 INFO  time: initialize in 1.01s
+2020.08.28 12:52:24 WARN  no build tool detected in workspace '/media/arpan/DATA2/PROGRAMS/github.com/ArpanMajumdar/tech-knowledge-base'. The most common cause for this problem is that the editor was opened in the wrong working directory, for example if you use sbt then the workspace directory should contain build.sbt. 

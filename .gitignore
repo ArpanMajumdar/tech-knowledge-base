@@ -32,3 +32,9 @@ yarn-error.log*
 .pytype
 __pycache__
 venv
+
+# Scala
+target
+big-data/spark/scala/spark-examples/target
+big-data/spark/scala/spark-examples/spark-warehouse
+big-data/spark/scala/spark-examples/tmp

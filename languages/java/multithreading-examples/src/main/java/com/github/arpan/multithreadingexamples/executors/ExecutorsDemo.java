@@ -39,6 +39,8 @@ public class ExecutorsDemo {
         }
         logger.info("Checking is future is completed? {}", future.isDone());
         logger.info("Result: {}", result);
+
+
         shutdownExecutor(executorService);
     }
 
