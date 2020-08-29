@@ -14,7 +14,7 @@
 | `hdfs dfs -rm -r /data/wiki` | Remove a directory (Data is moved to trash, `-skipTrash` deletes it permanently)
 | `hdfs dfs -mv file.txt another_file.txt` | Move or rename a file
 | `hdfs dfs -put <source location> <HDFS location>` | Move a file from local file system to HDFS
-| `hdfs dfs -cat hdfs_test_file.txt | head -4` | Print first 4 lines of the file stored at HDFS (use `| tail -n` for printing lines from end)
+| `hdfs dfs -cat hdfs_test_file.txt` | Prints the file stored at HDFS (use `| tail -n` for printing lines from end)
 | `hdfs dfs -tail hdfs_test_file.txt` | Prints last 1KB of the file
 | `hdfs dfs -cp hdfs_test_file.txt hdfs_test_file_copy.txt` | Copy file from HDFS to local
 | `hdfs dfs -get hdfs_test* .` | Download files starting with `hdfs_test` to local
