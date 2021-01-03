@@ -39,7 +39,9 @@ msg <- "hello"
 x <- 1:20 # Creates a vector from 1 to 20
 ```
 
-## Objects
+## Data types
+
+### Objects
 
 R has 5 basic or atomic classes of objects:
 - character
@@ -53,13 +55,13 @@ The most basic object is a vector.
 - However, the one exception is a **list**, which is represented as a vector but can contain objects of different classes. 
 - Empty vectors can be created with the `vector()` function.
 
-## Numbers
+### Numbers
 - Numbers in R are treated as numeric objects(i.e. double precision real numbers).
 - If you explicitly want an integer, you need to specify the `L` suffix. e.g. - Entering 1 gives you numeric object, entering 1L explicitly gives you an integer.
 - There is also a special number `Inf` which represents infinity. e.g. - 1/0. `Inf` can be used in ordinary calculations. 
 - The value `NaN` represents an undefined value ("not a number"). e.g. - 0/0. `NaN` can also be thought of as a missing value.
 
-## Attributes
+### Attributes
 - R objects have attributes
   - names, dimnames
   - dimensions (matrices, arrays)
@@ -68,7 +70,7 @@ The most basic object is a vector.
   - other user-defined attributes/metadata
 - Attributes of an object can be accessed using the `attributes()` function.
 
-## Vectors
+### Vectors
 Vectors can be created using following methods 
 - The `c()` or concatenate function can be used to create vectors of objects.
 - Using the `vector()` function
@@ -85,14 +87,14 @@ x <- c(1+0i, 2+4i) # complex
 x <- vector("numeric", length=10)
 ```
 
-### Mixing vectors
+#### Mixing vectors
 When different objects are mixed in a vector, type coercion occurs so that every element in the vector is of the same class.
 ```R
 y <- c(1.7, "a") # character
 y <- c(TRUE, 2) # numeric TRUE: 1 and FALSE: 0
 y <- c("a", TRUE) # character 
 ```
-### Explicit coercion
+#### Explicit coercion
 - Objects can be explicitly coerced from one class to another using the `as.*` functions.
 - The types that cannot be coerced lead to NA values.
 ```R
@@ -103,7 +105,8 @@ as.logical(x) # FALSE TRUE TRUE TRUE TRUE TRUE TRUE
 as.character(x) # "0" "1" "2" "3" "4" "5" "6"
 ```  
 
-## Lists
+### Lists
+
 - Lists are vectors that can contain elements of different classes.
 
 ```R
@@ -120,3 +123,218 @@ x <- list(1, "a", TRUE, 1+4i)
 # [[4]]
 # [1] 1+4i
 ```
+
+### Matrices
+
+- Matrices are vectors with a dimension attribute. The dimension attribute is itself an integer vector of length 2 (nrow, ncol).
+
+```R
+m <- matrix(nrow = 2, ncol = 3) # Creating a matrix of size (2,3)
+# > m
+#      [,1] [,2] [,3]
+# [1,]   NA   NA   NA
+# [2,]   NA   NA   NA  
+dim(m)
+# [1] 2 3
+```
+- Matrices are constructed column-wise, so entries can be thought of starting in the "upper left" corner and running down the columns.
+```R
+m <- matrix(1:6, nrow = 2, ncol = 3)
+# > m
+#      [,1] [,2] [,3]
+# [1,]    1    3    5
+# [2,]    2    4    6
+```
+- Matrices can also be created directly from vectors by adding a dimension attribute.
+```R
+m <- 1:10
+# > m
+#  [1]  1  2  3  4  5  6  7  8  9 10
+dim(m) <- c(2,5)
+# > m
+#      [,1] [,2] [,3] [,4] [,5]
+# [1,]    1    3    5    7    9
+# [2,]    2    4    6    8   10
+```
+- Matrices can also be created by **column-binding** or **row-binding** with `cbind()` and `rbind()`.
+```R
+x <- 1:3
+y <- 10:12
+cbind(x,y)
+#      x  y
+# [1,] 1 10
+# [2,] 2 11
+# [3,] 3 12
+rbind(x,y)
+#   [,1] [,2] [,3]
+# x    1    2    3
+# y   10   11   12
+```
+
+### Factors
+
+- Factors are used to represent **categorical** data. 
+- They can be ordered or unordered.
+- One can think of a factor as an integer vector where each integer has a label.
+- They are treated specially by modeling functions like `lm()` and `glm()`.
+- Using factors with labels is better than using integers because factors are self describing. e.g.- Having a variable that has values male and female is better than a variable that has values 1 and 2.
+
+```R
+x <- factor(c("yes", "yes", "no", "yes","no"))
+# > x
+# [1] yes yes no  yes no 
+# Levels: no yes
+table(x) # Frequency counts of each categorical variable
+# x
+#  no yes 
+#   2   3 
+unclass(x)
+# [1] 2 2 1 2 1
+# attr(,"levels")
+# [1] "no"  "yes"
+```
+- Order of the levels can be set using the `levels` argument to `factor()`.
+- This can be important in linear modeling because first level is used as a baseline level.
+
+```R
+x <- factor(c("yes", "yes", "no", "yes", "no"), levels = c("yes", "no")) # Force to use yes as first level and no as second
+# > x
+# [1] yes yes no  yes no 
+# Levels: yes no
+```
+
+### Missing values
+
+- Missing values are denoted by **NA** or **NaN** for undefined mathematical operations.
+- `is.na()` is used to test objects if they are NA.
+- `is.nan()` is used to test for NaN.
+- NA values have a class also like integer NA, character NA etc.
+- A NaN value is also NA but converse is not true.
+
+```R
+x <- c(1, 2, NA, 10, 3)
+
+is.na(x)
+# [1] FALSE FALSE  TRUE FALSE FALSE
+is.nan(x)
+# [1] FALSE FALSE FALSE FALSE FALSE
+x <- c(1, 2, NA, NaN, 3)
+
+is.na(x)
+# [1] FALSE FALSE  TRUE  TRUE FALSE
+is.nan(x)
+# [1] FALSE FALSE FALSE  TRUE FALSE
+```
+
+### Dataframes
+
+- Dataframes are used to store data
+- They are represented as a special type of list where every element of the list has to have the same length.
+- Each element of the list can be thought of as a column and the length of each element of the list is the number of rows.
+- Unlike matrices, dataframes can store different classes of objects in each column(just like lists). Matrices must have every element of the same class.
+- Dataframes have a special attribute called `row.names`.
+- Dataframes are usually created by calling `read.table()` or `read.csv()`.
+- Can be converted to a matrix by calling `data.matrix()`.
+- They can also be created using `data.frame()` function.
+
+```R
+x <- data.frame(foo = 1:4, bar = c(T, T, F, F))
+# > x
+#   foo   bar
+# 1   1  TRUE
+# 2   2  TRUE
+# 3   3 FALSE
+# 4   4 FALSE
+nrow(x)
+# [1] 4
+ncol(x)
+# [1] 2
+```
+
+## Names 
+
+- R objects can also have names, which is very useful for writing readable code and self-describing objects.
+```R
+x <- 1:3
+names(x)
+# NULL
+names(x) <- c("a", "b", "c")
+# > names(x)
+# [1] "a" "b" "c"
+# > x
+# a b c 
+# 1 2 3  
+```
+- Lists can also have names.
+```R
+x <- list(a = 1, b = 2, c = 3)
+# > x
+# $a
+# [1] 1
+
+# $b
+# [1] 2
+
+# $c
+# [1] 3
+```
+- Matrices can have dimnames
+```R
+m <- matrix(1:4, nrow = 2, ncol = 2)
+dimnames(m) <- list(c("a", "b"), c("c", "d"))
+# > m
+#   c d
+# a 1 3
+# b 2 4
+```
+
+## Reading data
+
+### Reading tabular data
+
+There are few principal functions reading data into R
+
+| Function                 | Description                                   |
+| ------------------------ | --------------------------------------------- |
+| `read.table`, `read.csv` | Reading tabular data                          |
+| `readLines`              | Reading lines of a text file                  |
+| `source`                 | For reading R code files (inverse of dump)    |
+| `dget`                   | For reading in R code files (inverse of dput) |
+| `load`                   | For reading in saved workspaces               |
+| `unserialize`            | For reading single R objects in binary form   |
+
+There are analogous functions for writing data to files
+
+| Function      | Description |
+| ------------- | ----------- |
+| `write.table` |
+| `writeLines`  |
+| `dump`        |
+| `dput`        |
+| `save`        |
+| `serialize`   |
+
+### Reading data files with read.table
+
+The `read.table` function is one of the most commonly used functions for reading data. It has few important arguments.
+
+| Argument         | Desc                                                                  |
+| ---------------- | --------------------------------------------------------------------- |
+| file             | name of file or connection                                            |
+| header           | logical indicating if the file has a header line                      |
+| sep              | a string indicating how columns are separated                         |
+| colClasses       | a character vector indicating the class of each column in the dataset |
+| nrows            | number of rows in the dataset                                         |
+| comment.char     | a character string indicating the comment character                   |
+| skip             | number of lines to skip from the beginning                            |
+| stringsAsFactors | should character variables be coded as factors?                       |
+
+- `read.csv` is identical to `read.table` except that the default separator is `,` in the former and space in the latter.
+
+### Reading larger datasets with read.table
+
+- With much larger datasets, doing these things will make life easier and prevent R from choking.
+  - Read the help page for `read.table` which contains many hints.
+  - Make a rough calculation of the memory required to store the dataset. If dataset is larger than the amount of RAM on your computer, you can probably stop right there.
+  - Set `comment.char = ""` if there are no commented lines in your file.
+  - 
