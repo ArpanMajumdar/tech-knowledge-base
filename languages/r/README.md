@@ -337,4 +337,180 @@ The `read.table` function is one of the most commonly used functions for reading
   - Read the help page for `read.table` which contains many hints.
   - Make a rough calculation of the memory required to store the dataset. If dataset is larger than the amount of RAM on your computer, you can probably stop right there.
   - Set `comment.char = ""` if there are no commented lines in your file.
-  - 
+  - Use the `colClasses` argument. Specifying this option instead of using the default can make `read.table` run much faster, often twice as fast. In order to use this ption, you have to know the class of each column in your dataframe. A quick and dirty way to figure out the classes of each column is to read the first 100 or 1000 rows.
+  ```R
+  initial <- read.table("datatable.txt", nrows = 100)
+  classes <- sapply(initial, class)
+  tabAll <- read.table("datatable.txt", colClasses = classes)
+  ```
+  - Set `nrows`. This doesn't run faster but it helps with memory usage. You can use unix tool `wc` to calculate the number of lines in the file.
+  
+### Calculating memory requirements
+
+Suppose we have a dataframe with 1.5M rows and 120 columns, all of which is numeric data. Roughly how much memory is required to store this dataframe?
+```
+1.5M x 120 x 8 bytes/numeric
+  = 1440M bytes
+  = 1440M/ 2^20 bytes/MB
+  = 1373.29 MB
+  = 1.34 GB
+```
+1.34 GB is the raw memory required to store this data. However, due to storage overhead as a rule of thumb, we should allocate twice the amount of memory for the dataset.
+
+## Textual data formats
+
+- **dumping** and **dputing** are useful because the resulting textual format is editable and in case of corruption, potentially recoverable.
+- Unlike writing out a table or CSV file, dump and dput preserve the metadata, so that another user doesn't have to specify it all over again.
+- Textual formats can work much better with VCS like git which can only track changes meaningfully in text files.
+- Textual formats can be longer lived i.e. if there is a corruption in the file, it can be easier to fix.
+- Downsize is that it is not space efficient.
+
+### dput function
+
+Another way to pass data around is by deparsing the R object with `dput` and reading it back using `dget`.
+
+```R
+y <- data.frame(a = 1, b = "a")
+# > dput(y)
+# structure(
+#   list(a = 1, b = "a"), 
+#   class = "data.frame", 
+#   row.names = c(NA, -1L)
+# )
+dput(y, file = "y.R") # Writes to a file names y.R
+y_new <- dget("y.R") # Reading from file
+# > y_new
+#   a b
+# 1 1 a
+```
+
+### dump function
+
+- Difference between dput and dump is that multiple objects can be serialized using dump. 
+- Object names should be passed as a character vector.
+
+```R
+x <- "foo"
+y <- data.frame(a = 1, b = "a")
+dump(c("x", "y"), file = "data.R") # Write to data.R
+rm(x,y)
+source("data.R") # Read from data.R
+# > x
+# [1] "foo"
+# > y
+#   a b
+# 1 1 a
+```
+
+## Connections
+
+- Data are read in using **connection** interfaces. Connections can be made to files(most common) or to other more exotic things.
+  - `file` - opens a connection to a file
+  - `gzfile` - opens a connection to a file compressed with gzip
+  - `bzfile` - opens a connection to a file compressed with bzip2
+  - `url` - opens a connection to a webpage
+- In practice, we don't need to deal with the connection interface directly.
+
+### File connections
+Function definition
+```R
+file(description = "", open = "", blocking = TRUE,
+     encoding = getOption("encoding"), raw = FALSE,
+     method = getOption("url.method", "default"))
+```
+
+- `description` is the name of the file.
+- `open` is a code indicating
+  - r - read only
+  - w - writing(and initializing a new file)
+  - a - appending
+  - rb, wb, ab - Reading, writing or appending in binary mode
+- To read specified lines from a text file, pass the connection object to `readLines` method.
+
+```R
+con <- gzfile("words.gz")
+x <- readLines(con, 10)
+```
+
+### URL connections
+
+- `readLines` can be useful for reading in lines of webpages.
+
+```R
+con <- url("https://google.com")
+x <- readLines(con)
+```
+
+## Subsetting
+
+There are a number of operators that can be used to extract subsets of R objects.
+- **[** always returns an object of the same class as the original; can be used to select more than one element.
+- **[[** is used to extract elements of a list or a dataframe; it can only be used to extract a single element and class of the returned object will not be necessarily the same.
+- **$** is used to extract elements of a list or dataframe by name; semantics are similar to hat of **[[**.
+```R
+x <- c("a", "b", "c", "c", "d", "a")
+x[1]
+# [1] "a"
+x[2]
+# [1] "b"
+x[1:5]
+# [1] "a" "b" "c" "c" "d"
+x[x > "a"] # Logical indexing
+# [1] "b" "c" "c" "d"
+u <- x > "a"
+# > u
+# [1] FALSE  TRUE  TRUE  TRUE  TRUE FALSE
+```
+
+### Subsetting lists
+
+```R
+x <- list(foo = 1:4, bar = 0.6)
+
+x[1] # Result is a vector
+# $foo
+# [1] 1 2 3 4
+
+x[[1]] 
+# [1] 1 2 3 4
+
+x$bar
+# [1] 0.6
+
+x[["bar"]]
+# [1] 0.6
+
+x["bar"]
+# $bar
+# [1] 0.6
+
+x <- list(foo = 1:4, bar = 0.6, baz = "hello")
+x[c(1,3)] # Extract multiple elements from list
+# $foo
+# [1] 1 2 3 4
+
+# $baz
+# [1] "hello"
+```
+
+- The advantage with [[ operator is that it can be used with computed indexes whereas $ can only be used with literal names.
+
+```R
+x <- list(foo = 1:4, bar = 0.6, baz = "hello")
+name <- "foo"
+x[[name]]
+# [1] 1 2 3 4
+x$name # This can't be used as this doesn't exist
+# NULL
+```
+- [[ can also be used to extract nested elements of a list.
+
+```R
+x <- list(a = list(10, 12, 14), b = c(3.14, 2.81))
+x[[c(1,3)]]
+# [1] 14
+x[[1]][[3]] # This expression is equivalent to the above
+# [1] 14
+x[[c(2,1)]]
+# [1] 3.14
+```
