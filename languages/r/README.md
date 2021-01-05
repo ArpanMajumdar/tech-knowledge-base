@@ -514,3 +514,93 @@ x[[1]][[3]] # This expression is equivalent to the above
 x[[c(2,1)]]
 # [1] 3.14
 ```
+
+### Subsetting a matrix
+
+```R
+x <- matrix(1:6, 2, 3)
+# > x
+#      [,1] [,2] [,3]
+# [1,]    1    3    5
+# [2,]    2    4    6
+
+x[1,2]
+# [1] 3
+
+x[2,1]
+# [1] 2
+
+x[1,]
+# [1] 1 3 5
+
+x[,2]
+# [1] 3 4
+```
+
+- By default , when a single element of a matrix is retrieved, it is returned as a vector of length 1 rather than a 1x1 matrix. This behavior can be turned off by setting `drop = FALSE`.
+
+```R
+x[1,2] # Returns a vector of length 1
+# [1] 3
+
+x[1,2, drop = FALSE] # Returns a 1x1 matrix
+#      [,1]
+# [1,]    3
+
+x[1,] # Returns a vector of size 3
+[1] 1 3 5
+
+x[1, ,drop = FALSE] # Returns a matrix of size 1x3
+#      [,1] [,2] [,3]
+# [1,]    1    3    5
+```
+
+## Partial matching
+
+Partial matching of names is allowed with [[ and $.
+
+```R
+x <- list(aardvark = 1:5)
+
+x$a # Matches partially to the closest name
+# [1] 1 2 3 4 5
+
+x[["a"]] # Requires an exact match unless you specify flag exact = FALSE
+# NULL
+
+x[["a", exact = FALSE]]
+# [1] 1 2 3 4 5
+```
+
+## Removing NA values
+
+A common task in data cleaning is to remove missing values (NA).
+
+```R
+x <- c(1, 2, NA, 4, NA, 5)
+# > x
+# [1]  1  2 NA  4 NA  5
+
+bad <- is.na(x)
+x[!bad]
+# [1] 1 2 4 5
+```
+
+If there are multiple things and you want to take the subset with no missing values?
+
+```R
+x <- c(1,2,NA,4,NA,5)
+y <- c("a", "b", "c", "d", NA, "f")
+good <- complete.cases(x,y) # TRUE when all the corresponding elements are not NA
+# > good
+# [1]  TRUE  TRUE FALSE  TRUE FALSE  TRUE
+
+x[good]
+# [1] 1 2 4 5
+
+y[good]
+# [1] "a" "b" "d" "f"
+```
+
+## Vectorized operations
+
