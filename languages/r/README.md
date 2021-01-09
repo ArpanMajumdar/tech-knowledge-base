@@ -1,13 +1,24 @@
 # R programming language
 
-## Basic commands
+## Working with files
 
 | Command                  | Function                                         |
 | ------------------------ | ------------------------------------------------ |
 | getwd()                  | Get current working directory                    |
 | read.csv("path/to/file") | Read a csv                                       |
-| ls()                     | Shows objects in workspace                       |
+| ls()                     | Shows variables in workspace                       |
 | source("/path/to/file")  | Sources the contents of an R file in the console |
+| list.files()/dir() | List all the files in the current working directory
+| args() | Shows the what arguments a function takes
+| file.create("mytest.R") | Creates an empty file
+| file.exists("mytest.R") | Check if a file exists
+| file.info("mytest.R") | Show file information
+| file.rename("mytest.R") | Rename a file
+| file.remove("mytest.R") | Delete a file
+| file.copy("mytest.R") | Copy a file
+| file.path("folder1", "folder2") | Create a platform independent filepath
+| dir.create() | Create directories
+
 
 ## Functions
 
@@ -210,6 +221,7 @@ x <- factor(c("yes", "yes", "no", "yes", "no"), levels = c("yes", "no")) # Force
 - `is.nan()` is used to test for NaN.
 - NA values have a class also like integer NA, character NA etc.
 - A NaN value is also NA but converse is not true.
+- `my_data == NA` doesn't work as NA is not an actual value but a placeholder for a quantity that is not available. So, if we check equality of a vector with NA, it gives a vector of same length that contains all NAs.
 
 ```R
 x <- c(1, 2, NA, 10, 3)
@@ -460,6 +472,16 @@ x[x > "a"] # Logical indexing
 u <- x > "a"
 # > u
 # [1] FALSE  TRUE  TRUE  TRUE  TRUE FALSE
+
+# Select individual indices from vector
+x(c(3, 5, 7))
+
+# R doesn't give any error if we try to select an index outside the range of the vector. You should always make sure that indices are within the bound.
+x[0] # numeric(0)
+x[3000] # NA
+
+# Select all elements expect few
+x(c(-2, -10)) # Returns all elements except 2 and 10
 ```
 
 ### Subsetting lists
@@ -657,3 +679,33 @@ x %*% y # True matrix multiplication
 # [2,]   60   60
 ```
 
+## Sequences
+
+- Sequences can be created using the `:` operator or `seq()` function.
+- `1:10` created a numeric sequence with increment of 1.
+- Sequences can also be created for any real number (not only integers). e.g.- `pi:10`.
+- To generate sequence with a given increment. `seq(0, 10, by=0.5)`
+- To generate a sequence between two numbers of a specified length. `seq(5,30, length = 30)`
+- Use `length()` function to get the length of a sequence.
+- To create a sequence starting from 1 of same length of a given sequence, use `seq(along.with = my_seq)` or `seq_along(my_seq)` or `1:length(my_seq)`.
+- To create a sequence by replicating a number, use `rep()` function. e.g.- `rep(0, times = 40)` or `rep(c(0,1,2), times = 10)`.
+```R
+# To replicate a number n times
+
+rep(0, times = 40)
+# [1] 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+
+# To repeat a vector n times
+rep(c(0,1,2), times = 10)
+# [1] 0 1 2 0 1 2 0 1 2 0 1 2 0 1 2 0 1 2 0 1 2 0 1 2 0 1 2 0 1 2
+
+# To repeat each element of the vector n times
+rep(c(0,1,2), each = 10)
+# [1] 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 2 2 2 2 2 2 2 2 2 2
+```
+
+## Character operations
+
+| Function | Description
+| --- | ---
+| paste(char_vec, collapse = "") | Concatenates elements of character vector with given delimiter
