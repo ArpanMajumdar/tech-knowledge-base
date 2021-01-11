@@ -709,3 +709,209 @@ rep(c(0,1,2), each = 10)
 | Function | Description
 | --- | ---
 | paste(char_vec, collapse = "") | Concatenates elements of character vector with given delimiter
+
+## Indexing vectors
+
+- To select a subset of the vector, you can place an **index vector** in the square brackets immediately after the vector. e.g. - `x[1:10]`
+- Index vectors come in four different flavors - **logical vectors**, **vectors of positive integers**, **vectors of negative integers**, and **vectors of character strings**.
+- Logical indexing can be done by passing a logical vector between the square brackets. e.g. - `x[!is.na(x)]`
+- Logical vectors can be combined using logical operators like `&` and `|`. e.g. - `x[!is.na(x) & x > 0]`
+- To subset non-consecutive indices, we can pass a vector of indices to select the desired elements. e.g. - `x[c(3,5,7)]`
+- R doesn't throw an error if we try to get an index which is not in bounds of the vector and can return unexpected results. You should always make sure that index is within the bounds.
+- You can also use negative integer indexing to return all the elements except the elements specified by the negative index. e.g. - `x[c(-2, -10)] or x[-c(2,10)]` Returns all the elements of the vector except those 2nd and 10th elements.
+- You can also create named indices.
+```R
+vect <- c(foo = 11, bar = 2, norf = NA)
+# > vect
+#  foo  bar norf 
+#   11    2   NA
+```
+- We can get the names of a named vector by passing the vector to the `names()` function. Alternatively, we can also create a named vector from unnamed one. We can index a named vector by passing the name.
+```R
+names(vect)
+# [1] "foo"  "bar"  "norf"
+
+vect2 <- c(11,2,NA)
+names(vect2) <- c("foo", "bar", "norf")
+# > vect2
+#  foo  bar norf 
+#   11    2   NA 
+
+identical(vect, vect2) # We can check that vect and vect2 are identical
+# [1] TRUE
+
+vect["bar"]
+# bar 
+#   2 
+
+vect[c("foo", "bar")]
+# foo bar 
+#  11   2 
+```
+
+## Indexing matrices and dataframes
+
+### Matrices
+
+- Vectors don't have a `dim()` attribute. To get the length of a vector, we need to use the `length()` function.
+- To convert a vector to a matrix, we can set the dim attribute to the desired dimension.
+```R
+my_vector <- 1:20
+dim(my_vector)
+# NULL
+
+dim(my_vector) <- c(4,5)
+dim(my_vector)
+# [1] 4 5
+```
+- A matrix is simply a vector with a dimension attribute. 
+- A matrix can also be created using the `matrix()` function.
+```R
+matrix(1:20, nrow = 4, ncol = 5)
+```
+- Matrices can only contain ONE class of data.
+
+### Dataframes
+
+- Dataframe can be created using the `data.frame()` function.
+- Column names can be changed by assigning a names vector to the `colnames` attribute.
+```R
+patients <- c("Bill", "Gina", "Kelly", "Sean")
+my_matrix <- matrix(1:20, nrow = 4, ncol = 5)
+my_data <- data.frame(patients, my_matrix)
+# > my_data
+#   patients X1 X2 X3 X4 X5
+# 1     Bill  1  5  9 13 17
+# 2     Gina  2  6 10 14 18
+# 3    Kelly  3  7 11 15 19
+# 4     Sean  4  8 12 16 20
+
+cnames <- c("patient", "age", "bp", "rating", "test")
+colnames(my_data) <- cnames
+# > my_data
+#   patient age weight bp rating test
+# 1    Bill   1      5  9     13   17
+# 2    Gina   2      6 10     14   18
+# 3   Kelly   3      7 11     15   19
+# 4    Sean   4      8 12     16   20
+```
+
+## Control structures
+
+- Control structures in R allow you to control the flow of execution of a program, depending on runtime conditions. Common structures are
+  - `if, else` - testing a condition
+  - `for` - execute a loop a fixed number of times
+  - `while` - execute a loop while a condition is true
+  - `repeat` - execute an infinite loop
+  - `break` - break the execution of a loop
+  - `next` - skip an iteration of a loop
+  - `return` - exit a function
+
+### if
+**Syntax**
+```R
+if(<condition>){
+  # do something
+} else {
+  # do something else
+}
+
+if(<condition>){
+  # do something
+} else if(<condition>){
+  # do something
+} else {
+  # do something
+}
+```
+
+**Examples**
+```R
+if(x > 3){
+  y <- 10
+} else {
+  y <- 0
+}
+
+# If else can also be used in a functional style
+y <- if(x > 3){
+  10
+} else {
+  0
+}
+```
+
+### for-loop
+
+- `for` loops take an interior variable and assign it successive values from a sequence or a vector. For loops are most commonly used for iterating over elements of an object (list, vector, etc.).
+```R
+for(i in 1:10){
+  print(i)
+}
+```
+- These 3 loops have the same behavior.
+
+**For loop examples**
+```R
+x <- c("a", "b", "c", "d")
+
+for(i in 1:4){
+  print(x[i])
+}
+
+for(i in seq_along(x)){
+  print(x[i])
+}
+
+for(letter in x){
+  print(letter)
+}
+
+for(i in 1:4) print(x[i]) # You can omit curly braces if for loop contains only one statement
+```
+- For loops can be nested.
+```R
+x <- matrix(1:6, 2, 3)
+
+for(i in seq_len(nrow(x))){
+  for(j in seq_len(ncol(x))){
+    print(x[i,j])
+  }
+}
+```
+
+### while-loop
+
+- While loop begins by testing a condition. If it is true, then they execute teh loop body. Once the loop body is executed, the condition is tested again, and so forth.
+- While loops can potentially result in infinite loops if not written properly.
+
+**Example**
+```R
+count <- 0
+
+while(count < 10){
+  print(count)
+  count <- count + 1
+}
+```
+
+### repeat
+
+- Repeat initiates an infinite loop. 
+- The only way to exit a `repeat` loop is to call `break`.
+
+```R
+x0 <- 1
+tol <- 1e-8
+
+repeat{
+  x1 <- computeEstimate()
+
+  if(abs(x1 - x0) < tol){
+    break
+  } else {
+    x0 <- x1
+  }
+}
+```
+
