@@ -895,7 +895,7 @@ while(count < 10){
 }
 ```
 
-### repeat
+### repeat-loop
 
 - Repeat initiates an infinite loop. 
 - The only way to exit a `repeat` loop is to call `break`.
@@ -914,4 +914,189 @@ repeat{
   }
 }
 ```
+- This is a bit dangerous as there's no guarantee that it will stop. Better to set a hard limit on the number of iterations using a for loop.
+
+### next and return
+- `next` is used to skip an iteration of a loop
+```R
+for(i in 1:100){
+  if(i <= 20){
+    # Skip the first 20 iterations
+    next
+  }
+  # Do something
+}
+```
+- `return` signals that a function should exit and return a given value.
+
+
+## Functions
+
+- Functions are created using the `function()` directive and are stored as R objects just like anything else.
+- They are objects of class **function**.
+```R
+f <- function(<arguments>){
+  # Do something
+}
+```
+- Functions in R are **first class objects**, which means that they can be treated much like any other object.
+- Functions can be passed as arguments to other functions.
+- Functions can be nested, so that you can define a function inside of another function.
+- The return value of a function is the last expression in the function body to be evaluated.
+
+```R
+add2 <- function(x, y){
+  x + y
+}
+
+above10 <- function(x){
+  x[x > 10]
+}
+above10(1:20)
+#  [1] 11 12 13 14 15 16 17 18 19 20
+
+above <- function(x, n){
+  x[x > n]
+}
+above(1:20, 15)
+# [1] 16 17 18 19 20
+
+# We can also give default parameters to functions
+above <- function(x, n = 10){
+  x[x > n]
+}
+above(1:20)
+#  [1] 11 12 13 14 15 16 17 18 19 20
+
+columnmean <- function(y, removeNA = TRUE){
+  nc <- ncol(y)
+  means <- numeric(nc)
+  
+  for(i in 1:nc){
+    means[i] <- mean(y[,i], na.rm = removeNA)
+  }
+  means
+}
+x <- matrix(1:20, nrow = 4, ncol = 5)
+columnmean(x)
+# [1]  2.5  6.5 10.5 14.5 18.5
+```
+
+### Function arguments
+
+- Functions have named arguments which potentially have default values.
+- **Formal arguments** are the arguments included in the function definition.
+- The `formals` function returns a list of all the formal arguments of the function.
+- Not every function call in R makes use of all formal arguments.
+- Function arguments can be missing or might have default values.
+
+### Argument matching
+
+- R functions can be matched positionally or by name. So, the following calls to `sd` are equivalent.
+```R
+mydata <- rnorm(100)
+sd(mydata)
+sd(x = mydata)
+sd(x = mydata, na.rm = FALSE)
+sd(na.rm = FALSE, x = mydata)
+sd(na.rm = FALSE, mydata)
+```
+- Even though it's legal, it is not recommended to mess around with the order of the arguments too much, since it can lead to confusion.
+- You can mix positional matching with matching by name. When an argument is matched by name, it is taken out of the argument list and the remaining unnamed arguments are matched in order that they are listed in the function definition.
+```R
+args(lm)
+# function (formula, data, subset, weights, na.action, method = "qr", 
+#     model = TRUE, x = FALSE, y = FALSE, qr = TRUE, singular.ok = TRUE, 
+#     contrasts = NULL, offset, ...) 
+
+# Following two are equivalent
+lm(data = mydata, y ~ x, model = FALSE, 1:100)
+lm(y ~ x, mydata, 1:100, model = FALSE)
+```
+- Named arguments are useful on command line when you have long argument list and you want to use defaults for everything except few.
+- Named arguments can also help if you can remember the name of the argument and not its position on the argument list(e.g. - plot).
+- Functional arguments can also be **partially** matched, which is used for interactive work. The order of operations when given an argument is
+  1. Check for exact match for a named argument
+  2. Check for partial match
+  3. Check for a positional match 
+
+### Defining a function
+
+```R
+f <- function(a, b = 1, c = 2, d = NULL){
+
+}
+```
+- In addition to not specifying a value, you can also set an argument value to NULL.
+- 
+
+### Lazy evaluation
+
+- Arguments are evaluated lazily, so they are evaluated as needed.
+
+```R
+f <- function(a, b){
+  a ^ 2
+}
+
+f(2)
+# [1] 4
+```
+- This function never actually uses `b`, so calling `f(2)` will not  produce an error because 2 get positionally matched to `a`.
+```R
+f <- function(a, b){
+  print(a)
+  print(b)
+}
+f(2)
+# [1] 2
+# Error in print(b) : argument "b" is missing, with no default
+```
+- 2 got printed first before the error was triggered. This is because `b` did not have to be evaluated util after `print(a)`. Once the function  tried to evaluate `print(b)` it had to throw an error.
+
+### The "..." argument
+
+- The `...` argument indicates a variable number of arguments that are usually passed on to other functions.
+- `...` is often used when extending another function and you don't want to copy the entire argument list of the original function.
+
+```R
+myplot <- function(x, y, type = "l", ...){
+  plot(x, y, type = type, ...)
+}
+```
+- Generic functions use ... so that extra arguments can be passed to methods.
+- The arguments is also necessary when the number of arguments passed to the function cannot be known in advance.
+
+```R
+args(paste)
+function (..., sep = " ", collapse = NULL, recycle0 = FALSE) 
+
+args(cat)
+function (..., file = "", sep = " ", fill = FALSE, labels = NULL, append = FALSE) 
+```
+- Any arguments that come after `...` on the argument list must be named explicitly and cannot be partially matched.
+
+## Scoping rules
+
+- How does R know which value to assign to which symbol?
+```R
+lm <- function(x) {x * x}
+# > lm
+# function(x) {x * x}
+```
+- Why doesn't R give it the value of `lm` that is in the stats package?
+- When R tries to bind a value to a variable, it searches through a series of environments to find the appropriate value. 
+- When you are working on the command line and need to retrieve the value of an R object, the order is roughly
+  1. Search the global environment for a symbol name matching the one requested.
+  2. Search the namespaces of each of the packages on the search list.
+  3. The search list can be found using the `search()` function.
+
+```R
+search()
+#  [1] ".GlobalEnv"        "tools:rstudio"     "package:stats"     "package:graphics" 
+#  [5] "package:grDevices" "package:utils"     "package:datasets"  "package:methods"  
+#  [9] "Autoloads"         "package:base"
+```
+
+
 
