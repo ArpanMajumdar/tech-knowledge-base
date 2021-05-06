@@ -1098,5 +1098,185 @@ search()
 #  [9] "Autoloads"         "package:base"
 ```
 
+### Binding values to symbol
 
+- The global environment or the user's workspace is always the first element of the search list and base package is always the last.
+- The order of the packages in the list matters. R searches the symbol starting from beginning of the list to the end.
+- Users can configure which packages get loaded on the startup, so you cannot assume that there will be a set list of packages available.
+- When a user loads a package with `library` function, the namespace of that package gets put into Position 2 of the search list(by default) and everything else gets shifted down the list.
+- Note that R has separate namespaces for functions and non-functions, so it's possible to have an object named c and a function named c. 
 
+### R scoping rules
+
+- The scoping rules determine how a value is associated with a free variable in a function.
+- R uses **lexical scoping** or **static scoping** which is a common alternative to dynamic scoping.
+- Related to the scoping rules is how R uses the search list to bind a value to a symbol.
+- Lexical scoping turns out to be particularly useful for simplifying statistical computations.
+
+### Environment
+
+What is an environment?
+
+- An environment is a collection of (symbol, value) pairs. e.g.- x is a symbol and 3.14 might be its value.
+- Every environment has a parent environment; it is possible to have multiple "children".
+- The only environment without a parent is the empty environment.
+- A function + an environment = a closure or function closure.
+
+### Lexical scoping
+
+Consider the following function.
+
+```R
+f <- function(x, y){
+  x^2 + y/z
+}
+```
+This function has 2 arguments - x and y. In the body of the function is another symbol z. In this case z is a **free variable**. The scoping rules of a language determine how values are assigned to free variables. Free variables are not local variables and are not local variables.
+
+- Lexical scoping in R means that the values of free variables are searched for in the environment in which the function was defined.
+- Searching the value of a free variable
+  - If the value of a symbol is not found in the environment in which function was defined, then search is continued in the **parent environment**.
+  - The search continues down the sequence of parent environments until we hit the **top-level environment**; this usually is the global environment(workspace) or the namespace of the package.
+  - After the top-level environment, the search continues down the list until we hit the **empty environment**. If a value for a given symbol cannot be found once empty environment is arrived at, then an error is thrown.
+
+```R
+make.power <- function(n){
+  pow <- function(x){
+    x^n
+  }
+  pow
+}
+
+cube <- make.power(3)
+square <- make.power(2)
+
+cube(3)
+# [1] 27
+square(3)
+# [1] 9
+```
+
+What's in a function's environment?
+
+```R
+ls(environment(cube))
+# [1] "n"   "pow"
+get("n", environment(cube))
+# [1] 3
+ls(environment(square))
+# [1] "n"   "pow"
+get("n", environment(square))
+# [1] 2
+```
+
+### Consequences of lexical scoping
+
+- In R, all objects must be stored in memory.
+- All functions must carry a pointer to their respective defining environments, which could be anywhere.
+
+## Coding standards for R
+
+- Always use text files/text editor.
+- Indent your code (4 or 8 spaces)
+- Limit the width of your code (80 characters)
+- Limit the length of individual functions
+
+## Dates and times in R
+
+### Date in R
+
+- Dates are represented by the `Date` class.
+- Times are represented by the `POSIXct` or `POSIXlt` class.
+- Dates are stored internally as the number of days since epoch(1970-01-01).
+- Times are stored internally as the number of seconds since epoch(1970-01-01).
+
+```R
+x <- as.Date("1970-01-01")
+# > x
+# [1] "1970-01-01"
+unclass(x)
+# [1] 0
+x <- as.Date("1970-01-02")
+unclass(x)
+# [1] 1
+```
+
+### Time in R
+
+Times are represented using the POSIXct or the POSIXlt class.
+
+- POSIXct is just a very large integer under the hood. It is a useful class when you want to store times in something like a dataframe.
+- POSIXlt is a list underneath and it stores a bunch of other useful information like the day of week, day of year, day of the month etc.
+- There are a number of generic functions that work on dates and times.
+  - **weekdays** - gives the day of the week
+  - **months** - gives the month name
+  - **quarters** - give the quarter number(Q1, Q2, Q3, Q4)
+
+**POSIXlt**
+```R
+x <- Sys.time()
+# > x
+# [1] "2021-01-14 15:40:45 IST"
+class(x)
+# [1] "POSIXct" "POSIXt" 
+p <- as.POSIXlt(x)
+# > p
+# [1] "2021-01-14 15:40:45 IST"
+names(unclass(p))
+#  [1] "sec"    "min"    "hour"   "mday"   "mon"    "year"   "wday"   "yday"   "isdst"  "zone"  
+# [11] "gmtoff"
+p$sec
+# [1] 45.62063
+```
+
+**POSIXct**
+```R
+x <- Sys.time()
+# > x
+# [1] "2021-01-14 15:44:10 IST"
+
+# Time is stored as long value that is seconds after epoch
+unclass(x)
+# [1] 1610619251
+
+# There is no attribute sec in POSIXct class
+x$sec
+# Error in x$sec : $ operator is invalid for atomic vectors
+```
+
+Finally there is strptime function in case your dates are written in different format.
+```R
+datestr <- c("January 10, 2020 10:40", "December 9, 2021 9:10")
+x <- strptime(datestr, "%B %d, %Y %H:%M")
+# > x
+# [1] "2020-01-10 10:40:00 IST" "2021-12-09 09:10:00 IST"
+class(x)
+# [1] "POSIXlt" "POSIXt" 
+```
+
+### Operations on date and time
+
+- You can use mathematical operators on dates and times like add or subtract. You can do comparisons too (i.e. ==, <=)
+- Advantage with date and time classes is that it even keeps track of leap years, leap seconds, daylight savings and time zones.
+- Plotting function also recognize date-time classes and format them accordingly
+
+```R
+x <- as.Date("2021-01-01")
+y <- strptime("9 Jan 2021 11:34:21", "%d %b %Y %H:%M:%S")
+
+# Mathematical operations can be performed only if date formats are same
+x - y
+# Error in x - y : non-numeric argument to binary operator
+# In addition: Warning message:
+# Incompatible methods ("-.Date", "-.POSIXt") for "-" 
+
+x <- as.POSIXlt(x)
+x - y
+# Time difference of -8.253021 days
+
+# Time operations in different timezones
+x <- as.POSIXct("2020-10-25 01:00:00")
+y <- as.POSIXct("2020-10-25 06:00:00", tz = "GMT")
+y - x
+# Time difference of 10.5 hours
+```
