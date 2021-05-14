@@ -8,6 +8,7 @@ val kotlin_version: String by project
 plugins {
     application
     kotlin("jvm") version "1.4.32"
+    kotlin("plugin.serialization") version "1.5.0"
 }
 
 group = "com.github.arpan"
@@ -29,8 +30,11 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:$logback_version")
     implementation("io.ktor:ktor-server-core:$ktor_version")
     implementation("io.ktor:ktor-html-builder:$ktor_version")
-    implementation("org.jetbrains:kotlin-css-jvm:1.0.0-pre.31-kotlin-1.2.41")
+    implementation("org.jetbrains:kotlin-css:1.0.0-pre.148-kotlin-1.4.30")
     implementation("io.ktor:ktor-jackson:$ktor_version")
+    implementation("io.ktor:ktor-serialization:$ktor_version")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.1")
+    implementation("io.ktor:ktor-auth:$ktor_version")
     testImplementation("io.ktor:ktor-server-tests:$ktor_version")
 }
 

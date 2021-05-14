@@ -1,4 +1,4 @@
-package com.github.arpan
+package com.github.arpan.ktordemo
 
 import io.ktor.application.*
 import io.ktor.response.*
