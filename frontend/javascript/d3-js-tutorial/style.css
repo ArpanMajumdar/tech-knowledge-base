@@ -15,3 +15,33 @@ div.tooltip {
   padding: 2px;
   pointer-events: none;
 }
+
+.area {
+  fill: rgb(52, 157, 192);
+}
+
+g .tick text {
+  font-size: 13px;
+  fill: blueviolet;
+}
+
+g .tick line {
+  color: red;
+}
+
+.line {
+  fill: none;
+  stroke: rgb(15, 53, 160);
+  stroke-width: 3px;
+}
+
+.circle {
+  fill: orange;
+}
+
+div .bar {
+  display: inline-block;
+  width: 20px;
+  margin-right: 2px;
+  background-color: aquamarine;
+}
